@@ -37,3 +37,6 @@ Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints/
+# Sample papers — do not redistribute copyrighted PDFs
+data/sample_papers/*.pdf
+!data/sample_papers/README.md
