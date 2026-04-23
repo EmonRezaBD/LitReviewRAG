@@ -1,0 +1,39 @@
+# Virtual environments
+venv/
+litRev/
+env/
+.venv/
+
+# Environment variables (NEVER commit secrets)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Project outputs
+chroma_db/
+results/
+*.xlsx
+!evaluation/ground_truth/*.xlsx
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
