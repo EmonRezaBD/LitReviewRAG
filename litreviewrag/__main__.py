@@ -1,19 +1,9 @@
-"""Entry point for running LitReviewRAG as a module.
+"""Entry point for `python -m litreviewrag`.
 
-Enables the command: `python -m litreviewrag`
+Delegates to the typer-based CLI defined in cli.py.
 """
 
-from litreviewrag import config
-
-
-def main() -> None:
-    """Smoke test: validate config and print confirmation."""
-    config.validate()
-    print("✅ LitReviewRAG configured successfully.")
-    print(f"   Extraction model: {config.EXTRACTION_MODEL}")
-    print(f"   Embedding model:  {config.EMBEDDING_MODEL}")
-    print(f"   ChromaDB path:    {config.CHROMA_PERSIST_DIR}")
-
+from litreviewrag.cli import app
 
 if __name__ == "__main__":
-    main()
+    app()

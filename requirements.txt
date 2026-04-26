@@ -11,3 +11,4 @@ tenacity==9.0.0
 bert-score==0.3.13
 pandas==2.2.3
 tqdm==4.67.0
+click==8.1.7
