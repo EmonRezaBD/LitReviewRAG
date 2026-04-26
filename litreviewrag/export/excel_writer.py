@@ -94,19 +94,75 @@ def _style_header(ws: Worksheet, num_columns: int) -> None:
         cell.alignment = _WRAP
     ws.freeze_panes = "A2"
 
+# These render as bullet points; all other fields render as prose.
+_LIST_FIELDS = {
+    "research_questions",
+    "contributions",
+    "methodology",
+    "findings",
+    "limitations",
+    "future_work",
+}
+
+
+def _format_value(field_name: str, value: str) -> str:
+    """Format a field value for Excel display.
+
+    For semicolon-list fields (research_questions, contributions): split
+    on semicolons into bullets.
+
+    For prose fields that benefit from bulleting (methodology, findings,
+    limitations, future_work): split on sentence-ending periods into
+    bullets, preserving period punctuation on each bullet.
+
+    For all other fields (title, problem_statement): return the original
+    prose unchanged.
+
+    Args:
+        field_name: The field's identifier.
+        value: The raw extracted value from the LLM.
+
+    Returns:
+        Either the original prose or a multi-line bullet list.
+    """
+    if not value:
+        return ""
+    if field_name not in _LIST_FIELDS:
+        return value
+
+    # Semicolon-style fields: explicit list separators in the prompt
+    if field_name in {"research_questions", "contributions"}:
+        items = [item.strip() for item in value.split(";") if item.strip()]
+    else:
+        # Prose fields: split on periods, but only when followed by a space
+        # or end-of-string (avoids splitting on decimals like "85.3%").
+        import re
+
+        sentences = re.split(r"\.(?=\s|$)", value)
+        items = [s.strip() for s in sentences if s.strip()]
+        # Re-add the trailing period that the split consumed
+        items = [s if s.endswith(".") else s + "." for s in items]
+
+    if not items:
+        return value
+    return "\n".join(f"• {item}" for item in items)
 
 def _write_extractions_sheet(
     ws: Worksheet, extractions: list[PaperExtraction]
 ) -> None:
     """Write the per-paper extraction sheet.
 
-    Layout: paper_name | <8 field columns> | source_citations
+    Layout: paper_name | <8 field columns>
+
+    Source chunk citations are NOT shown here to keep the sheet readable.
+    They are preserved in results/extractions.json for verification, per
+    the proposal's bias-mitigation requirement (Section VII.B).
 
     Args:
         ws: Target worksheet (renamed by caller).
         extractions: One PaperExtraction per paper.
     """
-    headers = ["paper_name"] + [spec.name for spec in FIELD_SPECS] + ["source_citations"]
+    headers = ["paper_name"] + [spec.name for spec in FIELD_SPECS]
     ws.append(headers)
 
     for ex in extractions:
@@ -114,8 +170,8 @@ def _write_extractions_sheet(
         # Pull each field in canonical order; missing fields render as empty
         for spec in FIELD_SPECS:
             fe = ex.fields.get(spec.name)
-            row.append(fe.value if fe and fe.value else "")
-        row.append(_format_source_citations(ex))
+            value = fe.value if fe and fe.value else ""
+            row.append(_format_value(spec.name, value))
         ws.append(row)
 
     # Wrap text in all data cells so long extractions stay readable
@@ -125,8 +181,7 @@ def _write_extractions_sheet(
 
     _style_header(ws, len(headers))
     _autosize_columns(ws)
-
-
+    
 def _write_contradictions_sheet(
     ws: Worksheet, contradictions: list[Contradiction]
 ) -> None:
