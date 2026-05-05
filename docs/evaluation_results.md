@@ -50,3 +50,44 @@ This is documented as a known limitation rather than fixed, because
 forcing the model to fabricate future-work content where the paper
 states none would violate the proposal's hallucination-prevention design
 (Section VII.B).
+## Precision@5: Retrieval Quality
+
+**Judge model:** `gpt-4o-mini` &nbsp;&nbsp; **Judgments:** 200
+
+### Overall
+
+| Metric | Score |
+|---|---|
+| **Precision@5** | **0.6700** |
+
+### Per-Field Breakdown
+
+| Field | Precision@5 | n |
+|---|---|---|
+| title | 0.2400 | 25 |
+| problem_statement | 0.8000 | 25 |
+| research_questions | 0.6400 | 25 |
+| contributions | 0.7600 | 25 |
+| methodology | 0.9200 | 25 |
+| findings | 0.8400 | 25 |
+| limitations | 0.8800 | 25 |
+| future_work | 0.2800 | 25 |
+
+### Notes on Two Field-Level Outliers
+
+**`title` (P@5 = 0.24):** This number does *not* reflect production
+retrieval quality for titles. The pipeline uses positional retrieval
+(first chunks of the document) for `title`, bypassing hybrid search
+entirely — see `_get_first_chunks` in `extractor.py`. The P@5 score
+above measures what hybrid search *would* return, which is unused by
+the live pipeline. Title extraction's true performance is reflected in
+its **BERTScore F1 of 0.996** (near-perfect).
+
+**`future_work` (P@5 = 0.28):** Three of five evaluation papers do not
+contain explicitly-stated future work content. The pipeline correctly
+returns `null` for these (consistent with the proposal's
+hallucination-prevention design). The retriever has no relevant
+chunks to surface, which the judge then labels "not useful." This is
+a property of the corpus, not a retrieval bug.
+
+**Excluding these two:** the remaining 6 fields average **P@5 = 0.81**.
