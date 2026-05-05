@@ -1,0 +1,23 @@
+[
+  {
+    "paper_a": "eval_paper_3.pdf",
+    "paper_b": "eval_paper_1.pdf",
+    "claim_a": "GPT-3 demonstrates high algorithmic fidelity and accurately reflects diverse human sub-populations' attitudes and behaviors",
+    "claim_b": "Current large language models achieve only moderate alignment with real human security and privacy patterns, with simulation quality scores of just 50-64 out of 100",
+    "explanation": "Paper 3 claims LLMs achieve high-fidelity simulation of human populations; Paper 1 finds the same general capability achieves only moderate quality (50-64%). The papers reach conflicting conclusions about how well current LLMs simulate human attitudes and behaviors."
+  },
+  {
+    "paper_a": "eval_paper_2.pdf",
+    "paper_b": "eval_paper_3.pdf",
+    "claim_a": "Alignment procedures in newer models like ChatGPT and GPT-4 inadvertently hurt the model's ability to simulate naturally flawed humans, producing 'hyper-accuracy distortion'",
+    "claim_b": "GPT-3 successfully simulates human variance, accurately mirroring the actual reported voting choices and reproducing nuanced inter-correlations between personal behaviors and attitudes",
+    "explanation": "Paper 2 identifies a systematic failure in aligned LLMs where they cannot reproduce human-like errors and variance. Paper 3 claims LLMs successfully reproduce the full distribution of human attitudes and behaviors. These conclusions disagree about whether modern LLMs can faithfully represent human-like flaws and variance in simulation."
+  },
+  {
+    "paper_a": "eval_paper_4.pdf",
+    "paper_b": "eval_paper_5.pdf",
+    "claim_a": "LLM-based agents (RecAgent) achieve item-selection accuracy just 8.7% below real human performance and generate human-like insights comparable to non-expert humans",
+    "claim_b": "LLM responses lack the emotional depth, spontaneity, and concrete life details of real human participants, reducing them to shallow approximations",
+    "explanation": "Paper 4 reports LLM agents achieve near-human performance and produce human-comparable outputs. Paper 5 reports LLMs fundamentally lack the depth required to simulate humans authentically. The papers reach opposing conclusions on whether LLMs can produce sufficiently human-like responses for behavioral simulation."
+  }
+]

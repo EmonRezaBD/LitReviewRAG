@@ -91,3 +91,42 @@ chunks to surface, which the judge then labels "not useful." This is
 a property of the corpus, not a retrieval bug.
 
 **Excluding these two:** the remaining 6 fields average **P@5 = 0.81**.
+## Contradiction Detection: Precision, Recall, F1
+
+**Judge model:** `gpt-4o-mini` &nbsp;&nbsp; **Synthesis model:** `gpt-4o`
+
+| Metric | Value |
+|---|---|
+| Predicted contradictions | 2 |
+| Ground-truth contradictions | 3 |
+| True positives | 2 |
+| False positives | 0 |
+| False negatives | 1 |
+| **Precision** | **1.0000** |
+| **Recall** | **0.6667** |
+| **F1** | **0.8000** |
+
+### Methodology Notes
+
+**Paper-pair flexibility in matching.** A predicted contradiction is
+counted as a true positive if it (a) shares at least one paper with a
+ground-truth contradiction and (b) describes the same underlying
+empirical disagreement, judged by an LLM. Exact paper-pair matching
+was rejected as overly strict because multiple papers in a corpus may
+anchor the same disagreement — for example, if papers A, B, and C all
+claim "high LLM fidelity" while paper D claims "low fidelity," the
+genuine contradiction is the high-vs-low conflict regardless of
+whether it surfaces as (A,D), (B,D), or (C,D).
+
+**Conservative synthesis design.** The contradiction prompt explicitly
+instructs the model to ignore differences in scope, framing, or domain.
+This produces zero false positives but at the cost of recall — domain
+differences that a human might frame as substantive disagreements
+(e.g., recommender-agent fidelity vs. qualitative-interview depth) are
+correctly skipped. This trade-off was a deliberate design choice to
+align with the proposal's bias-mitigation requirements (Section VII.B).
+
+**Eval-paper isolation.** Synthesis is run only on the 5 evaluation
+papers, not on every paper in the ChromaDB store. This prevents
+contamination from earlier development papers that are not in the
+ground-truth set.
