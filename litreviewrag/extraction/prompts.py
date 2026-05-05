@@ -34,10 +34,15 @@ class FieldSpec:
 FIELD_SPECS: list[FieldSpec] = [
     FieldSpec(
         name="title",
-        retrieval_query="paper title and authors",
+        # Bias retrieval toward the FIRST page where the paper's own title
+        # appears, NOT the references section where cited works' titles
+        # would also match a generic "title" query.
+        retrieval_query="abstract introduction first page title heading",
         description=(
-            "The full title of the paper as it appears at the top of the "
-            "first page. Do not include author names or affiliations."
+            "The full title of THIS paper as it appears at the very top "
+            "of the first page (typically above or near the abstract). "
+            "Do not extract titles of other papers cited in the references. "
+            "Do not include author names or affiliations."
         ),
     ),
     FieldSpec(

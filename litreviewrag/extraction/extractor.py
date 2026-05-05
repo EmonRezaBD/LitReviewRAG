@@ -143,6 +143,61 @@ def _format_context(chunks: list[HybridResult]) -> str:
     parts = [f"[Chunk {i + 1}]\n{c.text}" for i, c in enumerate(chunks)]
     return "\n\n".join(parts)
 
+def _get_first_chunks(
+    searcher: HybridSearcher,
+    paper_name: str,
+    n: int = 2,
+) -> list[HybridResult]:
+    """Return the first n chunks of a paper in document order.
+
+    Used for fields like 'title' that live in a fixed location at the
+    start of the document. Bypasses similarity search entirely — the
+    title is always near chunk_index 0, regardless of query phrasing.
+
+    Args:
+        searcher: The hybrid searcher (used only to access the underlying store).
+        paper_name: Which paper to fetch from.
+        n: Number of leading chunks to return.
+
+    Returns:
+        Up to n chunks ordered by chunk_index ascending. May be empty
+        if the paper has no chunks in the store.
+    """
+    # Reach into the searcher's store to pull all chunks for this paper.
+    # We then filter and sort by chunk_index — fast even for thousands of chunks.
+    store = searcher._store  # noqa: SLF001 — internal accessor by design
+    collection_records = store._collection.get(  # noqa: SLF001
+        where={"paper_name": paper_name},
+        include=["documents", "metadatas"],
+    )
+    docs = collection_records["documents"]
+    metas = collection_records["metadatas"]
+    if not docs:
+        return []
+
+    # Pair (chunk_index, text) and sort to get document-order chunks
+    pairs = sorted(
+        [
+            (int(meta["chunk_index"]), doc, str(meta["paper_name"]))
+            for doc, meta in zip(docs, metas)
+        ],
+        key=lambda x: x[0],
+    )
+    leading = pairs[:n]
+
+    # Wrap in HybridResult so the caller's interface stays uniform.
+    # bm25/vector scores are not meaningful here — this is positional retrieval.
+    return [
+        HybridResult(
+            text=text,
+            paper_name=p_name,
+            chunk_index=idx,
+            score=1.0,
+            bm25_score=0.0,
+            vector_score=0.0,
+        )
+        for idx, text, p_name in leading
+    ]
 
 def extract_field(
     searcher: HybridSearcher,
@@ -165,12 +220,19 @@ def extract_field(
     """
     model = model or config.EXTRACTION_MODEL
 
-    # 1. Retrieve chunks relevant to this field
-    chunks = searcher.search(
-        query=field_spec.retrieval_query,
-        paper_name=paper_name,
-        top_k=top_k,
-    )
+    # Special case: titles always live on the first page. RAG retrieval is
+    # unreliable here because (a) the chunker often splits titles across
+    # boundaries and (b) generic "title" queries also match cited papers
+    # in the references. Use the document's first chunks directly.
+    if field_spec.name == "title":
+        chunks = _get_first_chunks(searcher, paper_name, n=2)
+    else:
+        chunks = searcher.search(
+            query=field_spec.retrieval_query,
+            paper_name=paper_name,
+            top_k=top_k,
+        )
+
     if not chunks:
         logger.warning(
             "No chunks retrieved for field '%s' in paper '%s'",
@@ -179,6 +241,24 @@ def extract_field(
         )
         return FieldExtraction(field_name=field_spec.name, value=None)
 
+    # Build the prompt
+    prompt = EXTRACTION_PROMPT_TEMPLATE.format(
+        field_name=field_spec.name,
+        field_description=field_spec.description,
+        context=_format_context(chunks),
+    )
+
+    # Call the LLM
+    client = _get_client()
+    raw = _call_llm(client, prompt, model)
+
+    # Parse and return
+    value = _parse_value(raw, field_spec.name)
+    return FieldExtraction(
+        field_name=field_spec.name,
+        value=value,
+        source_chunks=chunks,
+    )
     # 2. Build the prompt
     prompt = EXTRACTION_PROMPT_TEMPLATE.format(
         field_name=field_spec.name,
