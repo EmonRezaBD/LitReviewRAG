@@ -60,14 +60,43 @@ class PaperExtraction:
     paper_name: str
     fields: dict[str, FieldExtraction]
 
+def _get_client(model: str | None = None) -> OpenAI:
+    """Construct an OpenAI-compatible client for either OpenAI or OpenRouter.
 
-def _get_client() -> OpenAI:
-    """Construct an OpenAI client using the configured API key.
+    OpenRouter exposes an OpenAI-compatible API at a different base URL,
+    so we can use the same OpenAI() client with `base_url` overridden.
+    Routing is based on the model name: Llama-style model identifiers
+    (containing a slash, e.g. "meta-llama/llama-3.1-70b-instruct") go
+    through OpenRouter; everything else uses OpenAI directly.
+
+    Args:
+        model: Model name. If it contains '/', OpenRouter is used.
+            Defaults to OpenAI for None or simple model names.
 
     Returns:
-        A configured OpenAI client instance.
+        A configured OpenAI-compatible client instance.
+
+    Raises:
+        RuntimeError: If OpenRouter is requested but its API key is missing.
     """
+    if model and "/" in model:
+        if not config.OPENROUTER_API_KEY:
+            raise RuntimeError(
+                f"Model '{model}' requires OPENROUTER_API_KEY in .env"
+            )
+        return OpenAI(
+            api_key=config.OPENROUTER_API_KEY,
+            base_url="https://openrouter.ai/api/v1",
+        )
     return OpenAI(api_key=config.OPENAI_API_KEY)
+
+# def _get_client() -> OpenAI:
+#     """Construct an OpenAI client using the configured API key.
+
+#     Returns:
+#         A configured OpenAI client instance.
+#     """
+#     return OpenAI(api_key=config.OPENAI_API_KEY)
 
 
 @retry(
@@ -249,7 +278,8 @@ def extract_field(
     )
 
     # Call the LLM
-    client = _get_client()
+    # client = _get_client()
+    client = _get_client(model=model)
     raw = _call_llm(client, prompt, model)
 
     # Parse and return

@@ -130,3 +130,16 @@ align with the proposal's bias-mitigation requirements (Section VII.B).
 papers, not on every paper in the ChromaDB store. This prevents
 contamination from earlier development papers that are not in the
 ground-truth set.
+
+## Baseline Comparison: GPT-4o-mini vs Llama-3.1-70b
+
+**Evaluation set:** 5 papers, 40 (paper, field) pairs
+
+| Model | BERTScore F1 | BERTScore Precision | BERTScore Recall | Latency (s) | ~Cost (USD) |
+|---|---|---|---|---|---|
+| `gpt-4o-mini` | **0.8218** | 0.8309 | 0.8131 | 77.2 | ~$0.0450 |
+| `meta-llama/llama-3.1-70b-instruct` | **0.7967** | 0.8042 | 0.7895 | 97.8 | ~$0.0720 |
+
+**Cost notes:** Cost is a rough estimate based on a fixed per-paper token average. Actual costs vary by paper length and extracted text length.
+
+**Latency notes:** Latency includes network round-trip plus model inference; OpenRouter routing through Llama-70b-instruct typically incurs higher latency than OpenAI's first-party API.
